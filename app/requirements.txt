@@ -1,0 +1,8 @@
+fastapi
+uvicorn
+python-multipart
+requests
+pinecone-client
+python-dotenv
+PyPDF2
+python-docx
