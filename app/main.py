@@ -148,7 +148,7 @@ async def hackrx_run(request: QueryRequest):
 
         pinecone_records = []
         for idx, chunk in enumerate(chunks):
-            pinecone_records.append({"id": f"chunk-{idx}", "text": chunk})
+            pinecone_records.append({"id": f"chunk-{idx}", "values": [chunk]})
         index.upsert(vectors=pinecone_records)
 
         # 4. For each question: search Pinecone, get context, call Gemini LLM
@@ -157,15 +157,15 @@ async def hackrx_run(request: QueryRequest):
         for question in request.questions:
             # Search Pinecone for top 3 relevant chunks using integrated model
             search_results = index.query(
-                queries=[{"text": question}],
+                queries=[{"values": [question]}],
                 top_k=3
             )
             # Extract top chunks' text as context
             top_chunks = []
             if search_results and "results" in search_results and len(search_results["results"]) > 0:
                 for match in search_results["results"][0].get("matches", []):
-                    # For integrated model, the text is in match["text"]
-                    chunk_val = match.get("text", "")
+                    # For integrated model, the text is in match["values"][0]
+                    chunk_val = match.get("values", [""])[0]
                     if chunk_val:
                         top_chunks.append(chunk_val)
             context = "\n".join(top_chunks)
