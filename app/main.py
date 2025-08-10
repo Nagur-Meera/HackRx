@@ -82,17 +82,21 @@ def ask_gemini(question, context, api_key=GEMINI_API_KEY):
     else:
         return f"Gemini API error: {response.status_code}"
 
+from urllib.parse import urlparse
+
 def download_file(url):
     response = httpx.get(url)
     if response.status_code != 200:
         raise HTTPException(status_code=400, detail="Failed to download document.")
-    suffix = None
-    if url.lower().endswith('.pdf'):
+    # Parse the file extension from the URL path (ignore query params)
+    parsed = urlparse(url)
+    path = parsed.path.lower()
+    if path.endswith('.pdf'):
         suffix = '.pdf'
-    elif url.lower().endswith('.docx'):
+    elif path.endswith('.docx'):
         suffix = '.docx'
     else:
-        suffix = ''
+        raise HTTPException(status_code=400, detail="Unsupported file type. Only PDF and DOCX are supported.")
     temp = tempfile.NamedTemporaryFile(delete=False, suffix=suffix)
     temp.write(response.content)
     temp.close()
