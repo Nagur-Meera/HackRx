@@ -150,7 +150,7 @@ async def hackrx_run(request: QueryRequest):
         headers = {"Api-Key": PINECONE_API_KEY, "Content-Type": "application/json"}
         pinecone_records = []
         for idx, chunk in enumerate(chunks):
-            pinecone_records.append({"id": f"chunk-{idx}", "text": chunk, "metadata": {"text": chunk}})
+            pinecone_records.append({"id": f"chunk-{idx}", "values": chunk})
         upsert_body = {"vectors": pinecone_records}
         upsert_resp = requests.post(upsert_url, headers=headers, json=upsert_body)
         if not upsert_resp.ok:
