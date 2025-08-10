@@ -152,7 +152,11 @@ async def hackrx_run(request: QueryRequest):
         for idx, chunk in enumerate(chunks):
             pinecone_records.append({"id": f"chunk-{idx}", "text": chunk})
         upsert_body = {"vectors": pinecone_records}
+        print("[DEBUG] Pinecone upsert URL:", upsert_url)
+        print("[DEBUG] Pinecone upsert payload:", upsert_body)
         upsert_resp = requests.post(upsert_url, headers=headers, json=upsert_body)
+        print("[DEBUG] Pinecone upsert response status:", upsert_resp.status_code)
+        print("[DEBUG] Pinecone upsert response text:", upsert_resp.text)
         if not upsert_resp.ok:
             raise Exception(f"Pinecone upsert failed: {upsert_resp.text}")
 
