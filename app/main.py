@@ -1,7 +1,13 @@
 
 # ...existing code...
 
+
+# ...existing code...
+
 # Minimal Pinecone upsert test endpoint (must be after app = FastAPI())
+
+# ...existing code...
+
 @app.get("/hackrx/test-upsert")
 def test_upsert():
     import requests
