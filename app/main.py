@@ -130,43 +130,48 @@ def chunk_text(text, chunk_size=500, overlap=50):
     return chunks
 
 
+
 @app.post("/hackrx/run")
 async def hackrx_run(request: QueryRequest):
-    # 1. Download and parse the document (PDF/DOCX)
-    file_path = download_file(request.documents)
     try:
-        text = extract_text(file_path)
-    finally:
-        os.remove(file_path)
-    # 2. Chunk the text
-    chunks = chunk_text(text)
-    # 3. Upsert chunks to Pinecone (embedding generated automatically by integrated model)
-    index = pc.Index(PINECONE_INDEX_NAME)
-    pinecone_records = []
-    for idx, chunk in enumerate(chunks):
-        pinecone_records.append({"id": f"chunk-{idx}", "values": {"chunk_text": chunk}})
-    index.upsert(records=pinecone_records)
+        # 1. Download and parse the document (PDF/DOCX)
+        file_path = download_file(request.documents)
+        try:
+            text = extract_text(file_path)
+        finally:
+            os.remove(file_path)
+        # 2. Chunk the text
+        chunks = chunk_text(text)
+        # 3. Upsert chunks to Pinecone (embedding generated automatically by integrated model)
+        index = pc.Index(PINECONE_INDEX_NAME)
+        pinecone_records = []
+        for idx, chunk in enumerate(chunks):
+            pinecone_records.append({"id": f"chunk-{idx}", "values": {"chunk_text": chunk}})
+        index.upsert(records=pinecone_records)
 
-    # 4. For each question: search Pinecone, get context, call Gemini LLM
-    answers = []
-    for question in request.questions:
-        # Search Pinecone for top 3 relevant chunks
-        search_results = index.query(
-            queries=[{"chunk_text": question}],
-            top_k=3
-        )
-        # Extract top chunks' text as context
-        top_chunks = []
-        if search_results and "results" in search_results and len(search_results["results"]) > 0:
-            for match in search_results["results"][0].get("matches", []):
-                chunk_text = match["values"].get("chunk_text", "")
-                if chunk_text:
-                    top_chunks.append(chunk_text)
-        context = "\n".join(top_chunks)
-        # Call Gemini LLM
-        answer = ask_gemini(question, context)
-        answers.append(answer)
+        # 4. For each question: search Pinecone, get context, call Gemini LLM
+        answers = []
+        for question in request.questions:
+            # Search Pinecone for top 3 relevant chunks
+            search_results = index.query(
+                queries=[{"chunk_text": question}],
+                top_k=3
+            )
+            # Extract top chunks' text as context
+            top_chunks = []
+            if search_results and "results" in search_results and len(search_results["results"]) > 0:
+                for match in search_results["results"][0].get("matches", []):
+                    chunk_text = match["values"].get("chunk_text", "")
+                    if chunk_text:
+                        top_chunks.append(chunk_text)
+            context = "\n".join(top_chunks)
+            # Call Gemini LLM
+            answer = ask_gemini(question, context)
+            answers.append(answer)
 
-    return JSONResponse({"answers": answers})
+        return JSONResponse({"answers": answers})
+    except Exception as e:
+        import traceback
+        return JSONResponse({"error": str(e), "trace": traceback.format_exc()}, status_code=500)
 
 # To run: uvicorn main:app --reload
