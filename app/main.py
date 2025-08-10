@@ -161,9 +161,9 @@ async def hackrx_run(request: QueryRequest):
             top_chunks = []
             if search_results and "results" in search_results and len(search_results["results"]) > 0:
                 for match in search_results["results"][0].get("matches", []):
-                    chunk_text = match["values"].get("chunk_text", "")
-                    if chunk_text:
-                        top_chunks.append(chunk_text)
+                    chunk_val = match["values"].get("chunk_text", "")
+                    if chunk_val:
+                        top_chunks.append(chunk_val)
             context = "\n".join(top_chunks)
             # Call Gemini LLM
             answer = ask_gemini(question, context)
