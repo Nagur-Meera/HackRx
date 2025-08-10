@@ -147,7 +147,7 @@ async def hackrx_run(request: QueryRequest):
         index = pc.Index(PINECONE_INDEX_NAME)
         pinecone_records = []
         for idx, chunk in enumerate(chunks):
-            pinecone_records.append({"id": f"chunk-{idx}", "values": {"chunk_text": chunk}})
+            pinecone_records.append({"id": f"chunk-{idx}", "text": chunk})
         index.upsert(vectors=pinecone_records)
 
         # 4. For each question: search Pinecone, get context, call Gemini LLM
