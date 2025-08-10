@@ -145,8 +145,8 @@ async def hackrx_run(request: QueryRequest):
         # 2. Chunk the text
         chunks = chunk_text(text)
         # 3. Upsert chunks to Pinecone (embedding generated automatically by integrated model)
-        PINECONE_ENVIRONMENT = os.getenv("PINECONE_ENVIRONMENT")
-        upsert_url = f"https://{PINECONE_INDEX_NAME}-{PINECONE_ENVIRONMENT}.svc.pinecone.io/vectors/upsert"
+        PINECONE_HOST = os.getenv("PINECONE_HOST")
+        upsert_url = f"{PINECONE_HOST}/vectors/upsert"
         headers = {"Api-Key": PINECONE_API_KEY, "Content-Type": "application/json"}
         pinecone_records = []
         for idx, chunk in enumerate(chunks):
@@ -161,7 +161,7 @@ async def hackrx_run(request: QueryRequest):
 
         for question in request.questions:
             # Use Pinecone REST API for query with 'text' field (integrated model)
-            query_url = f"https://{PINECONE_INDEX_NAME}-{PINECONE_ENVIRONMENT}.svc.pinecone.io/query"
+            query_url = f"{PINECONE_HOST}/query"
             query_body = {
                 "topK": 3,
                 "includeMetadata": True,
