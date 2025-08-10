@@ -8,28 +8,11 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
-# Pinecone initialization
-from pinecone import Pinecone
 
+# Pinecone API Key (for REST API only)
 PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
 if not PINECONE_API_KEY:
     raise RuntimeError("PINECONE_API_KEY not set in environment variables.")
-pc = Pinecone(api_key=PINECONE_API_KEY)
-
-# Set your Pinecone index name
-PINECONE_INDEX_NAME = "hackrx-developer-quickstart-py"
-
-# Create index if it doesn't exist (with integrated embedding model)
-if not pc.has_index(PINECONE_INDEX_NAME):
-    pc.create_index_for_model(
-        name=PINECONE_INDEX_NAME,
-        cloud="aws",
-        region="us-east-1",
-        embed={
-            "model": "llama-text-embed-v2",
-            "field_map": {"text": "chunk_text"}
-        }
-    )
 
 
 from fastapi.middleware.cors import CORSMiddleware
