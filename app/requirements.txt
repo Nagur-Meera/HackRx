@@ -2,7 +2,7 @@ fastapi
 uvicorn
 python-multipart
 requests
-pinecone-client
+pinecone
 python-dotenv
 PyPDF2
 python-docx
