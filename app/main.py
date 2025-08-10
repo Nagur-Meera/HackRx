@@ -31,7 +31,24 @@ if not pc.has_index(PINECONE_INDEX_NAME):
         }
     )
 
+
+from fastapi.middleware.cors import CORSMiddleware
 app = FastAPI()
+
+# Allow CORS for all origins (optional, but useful for testing)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+import uvicorn
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=False)
 
 class QueryRequest(BaseModel):
     documents: str
