@@ -1,3 +1,27 @@
+# Minimal Pinecone upsert test endpoint
+@app.get("/hackrx/test-upsert")
+def test_upsert():
+    import requests
+    import os
+    PINECONE_HOST = os.getenv("PINECONE_HOST")
+    PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
+    upsert_url = f"{PINECONE_HOST}/vectors/upsert"
+    headers = {"Api-Key": PINECONE_API_KEY, "Content-Type": "application/json"}
+    pinecone_records = [
+        {"id": "doc1#chunk1", "text": "the quick brown fox jumped over the lazy dog"}
+    ]
+    upsert_body = {"vectors": pinecone_records}
+    print("[DEBUG] Pinecone upsert URL:", upsert_url)
+    print("[DEBUG] Pinecone upsert payload:", upsert_body)
+    upsert_resp = requests.post(upsert_url, headers=headers, json=upsert_body)
+    print("[DEBUG] Pinecone upsert response status:", upsert_resp.status_code)
+    print("[DEBUG] Pinecone upsert response text:", upsert_resp.text)
+    return {
+        "url": upsert_url,
+        "payload": upsert_body,
+        "status_code": upsert_resp.status_code,
+        "response": upsert_resp.text
+    }
 import os
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import JSONResponse
