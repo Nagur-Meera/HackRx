@@ -131,6 +131,7 @@ def chunk_text(text, chunk_size=500, overlap=50):
 
 
 
+
 @app.post("/hackrx/run")
 async def hackrx_run(request: QueryRequest):
     try:
@@ -147,7 +148,7 @@ async def hackrx_run(request: QueryRequest):
         pinecone_records = []
         for idx, chunk in enumerate(chunks):
             pinecone_records.append({"id": f"chunk-{idx}", "values": {"chunk_text": chunk}})
-        index.upsert(records=pinecone_records)
+        index.upsert(vectors=pinecone_records)
 
         # 4. For each question: search Pinecone, get context, call Gemini LLM
         answers = []
