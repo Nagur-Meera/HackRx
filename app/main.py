@@ -58,6 +58,7 @@ class QueryRequest(BaseModel):
 
 import tempfile
 import requests as httpx
+import requests
 from PyPDF2 import PdfReader
 import docx
 
@@ -144,30 +145,38 @@ async def hackrx_run(request: QueryRequest):
         # 2. Chunk the text
         chunks = chunk_text(text)
         # 3. Upsert chunks to Pinecone (embedding generated automatically by integrated model)
-        index = pc.Index(PINECONE_INDEX_NAME)
-
+        PINECONE_ENVIRONMENT = os.getenv("PINECONE_ENVIRONMENT")
+        upsert_url = f"https://{PINECONE_INDEX_NAME}-{PINECONE_ENVIRONMENT}.svc.pinecone.io/vectors/upsert"
+        headers = {"Api-Key": PINECONE_API_KEY, "Content-Type": "application/json"}
         pinecone_records = []
         for idx, chunk in enumerate(chunks):
-            pinecone_records.append({"id": f"chunk-{idx}", "metadata": {"text": chunk}})
-        index.upsert(vectors=pinecone_records)
+            pinecone_records.append({"id": f"chunk-{idx}", "values": None, "metadata": {"text": chunk}, "text": chunk})
+        upsert_body = {"vectors": pinecone_records}
+        upsert_resp = requests.post(upsert_url, headers=headers, json=upsert_body)
+        if not upsert_resp.ok:
+            raise Exception(f"Pinecone upsert failed: {upsert_resp.text}")
 
         # 4. For each question: search Pinecone, get context, call Gemini LLM
         answers = []
 
         for question in request.questions:
-            # Search Pinecone for top 3 relevant chunks using integrated model
-            search_results = index.query(
-                queries=[{"metadata": {"text": question}}],
-                top_k=3,
-                include_metadata=True
-            )
+            # Use Pinecone REST API for query with 'text' field (integrated model)
+            query_url = f"https://{PINECONE_INDEX_NAME}-{PINECONE_ENVIRONMENT}.svc.pinecone.io/query"
+            query_body = {
+                "topK": 3,
+                "includeMetadata": True,
+                "text": question
+            }
+            query_resp = requests.post(query_url, headers=headers, json=query_body)
+            if not query_resp.ok:
+                raise Exception(f"Pinecone query failed: {query_resp.text}")
+            search_results = query_resp.json()
             # Extract top chunks' text as context
             top_chunks = []
-            if search_results and "results" in search_results and len(search_results["results"]) > 0:
-                for match in search_results["results"][0].get("matches", []):
-                    chunk_val = match.get("metadata", {}).get("text", "")
-                    if chunk_val:
-                        top_chunks.append(chunk_val)
+            for match in search_results.get("matches", []):
+                chunk_val = match.get("metadata", {}).get("text", "")
+                if chunk_val:
+                    top_chunks.append(chunk_val)
             context = "\n".join(top_chunks)
             # Call Gemini LLM
             answer = ask_gemini(question, context)
